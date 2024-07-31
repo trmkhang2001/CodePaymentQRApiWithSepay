@@ -1,0 +1,136 @@
+<style>
+  .card {
+    padding: 20px;
+    border: 1px solid #2ea2cc;
+    border-radius: 15px;
+  }
+  .info-bank {
+    color: #000000;
+    background: white;
+    padding: 20px;
+    border-radius: 15px;
+  }
+  #qrCodeContainer {
+    margin-top: 20px;
+    text-align: center;
+  }
+  .info-item {
+    margin-bottom: 7px;
+  }
+  .note {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    border: 1px solid #e0cd9d;
+    background-color: #faebd7a1;
+    border-radius: 0.375rem;
+  }
+  .note svg {
+    color: #b09b66;
+    width: 1.25rem;
+    height: 1.25rem;
+    margin-top: 0.125rem;
+    flex: none;
+  }
+</style>
+<div class="card">
+  <div class="info-bank">
+    <div class="info-item">Thông tin chuyển khoản</div>
+    <div class="info-item">Thụ hưởng: <span id="thuhuong"></span></div>
+    <div class="info-item">Ngân hàng: <span id="bankname"></span></div>
+    <div class="info-item">Số tài khoản: <span id="stk"></span></div>
+    <div class="info-item">Số tiền: <span id="amount"></span></div>
+    <div class="info-item">Nội dung chuyển khoản: <span id="des"></span></div>
+    <div class="note">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 24 24"
+        fill="currentColor"
+      >
+        <path
+          fill-rule="evenodd"
+          d="M9.401 3.003c1.155-2 4.043-2 5.197 0l7.355 12.748c1.154 2-.29 4.5-2.599 4.5H4.645c-2.309 0-3.752-2.5-2.598-4.5L9.4 3.003zM12 8.25a.75.75 0 01.75.75v3.75a.75.75 0 01-1.5 0V9a.75.75 0 01.75-.75zm0 8.25a.75.75 0 100-1.5.75.75 0 000 1.5z"
+          clip-rule="evenodd"
+        ></path>
+      </svg>
+      <span
+        >Lưu ý: Vui lòng giữ nguyên nội dung chuyển khoản để xác nhận thanh toán
+        tự động.</span
+      >
+    </div>
+  </div>
+  <div id="qrCodeContainer">
+    <!-- Mã QR sẽ được hiển thị ở đây -->
+  </div>
+</div>
+<script>
+  // Thông tin tài khoản nhận tiến
+  // Tên ngân hàng
+  const BankName = "MBBank";
+  // Tên người thụ hương
+  const ThuHuong = "NGUYEN HOANG NAM";
+  // Số tài khoản
+  const STK = "0808101043333";
+  // Giá sản phẩm
+  const Amount = "2000";
+  //API Keyy
+  const bearerToken =
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJsb2NhdGlvbl9pZCI6Im0xM3BKOHY1VW1tc2VseEFPTTFPIiwidmVyc2lvbiI6MSwiaWF0IjoxNzIyNDE3ODcxMjk1LCJzdWIiOiJPT1BOdkRvNVF4NXBYQ1BOSENTViJ9.tISaUJzrwbDtx2sVroMedxerNWmoHbgZa6FN0j2KEqg";
+
+  // Hàm để lấy giá trị của một tham số từ URL
+  function getParameterByName(name) {
+    const url = window.location.href;
+    name = name.replace(/[\[\]]/g, "\\$&");
+    const regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)");
+    const results = regex.exec(url);
+    if (!results) return null;
+    if (!results[2]) return "";
+    return decodeURIComponent(results[2].replace(/\+/g, " "));
+  }
+  //Lấy email và mã hoá
+  const emailCustomer = getParameterByName("email");
+  fetch(`https://rest.gohighlevel.com/v1/contacts?query=${emailCustomer}`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${bearerToken}`,
+      "Content-Type": "application/json",
+    },
+  })
+    .then((response) => response.json())
+    .then((data) => {
+      console.log(data);
+      // Lấy ID từ dữ liệu API
+      const contactId = data.contacts[0].id;
+      console.log(contactId);
+    })
+    .catch((error) => console.error("Error:", error));
+  // Lấy số điện thoại từ URL
+  let customerPhone = getParameterByName("phone");
+  // Chuyển đổi số điện thoại từ +84 sang 0
+  if (customerPhone) {
+    customerPhone = customerPhone.trim();
+    if (customerPhone.startsWith("84")) {
+      customerPhone = "0" + customerPhone.substring(2);
+    }
+  }
+  // Mã đơn
+  const desCode = "DH" + customerPhone;
+
+  // Sử dụng số điện thoại để tạo URL của mã QR
+  const qrCodeUrl = `https://qr.sepay.vn/img?bank=${BankName}&acc=${STK}&template=&amount=${Amount}&des=${desCode}`;
+
+  //Hiển thị thông tin chuyển khoản
+  const bankname = document.getElementById("bankname");
+  bankname.innerText = BankName;
+  const stk = document.getElementById("stk");
+  stk.innerText = STK;
+  const amount = document.getElementById("amount");
+  amount.innerText = Amount;
+  const des = document.getElementById("des");
+  des.innerText = desCode;
+  const thuhuong = document.getElementById("thuhuong");
+  thuhuong.innerText = ThuHuong;
+  // Hiển thị mã QR
+  const qrCodeContainer = document.getElementById("qrCodeContainer");
+  qrCodeContainer.innerHTML = `<img src="${qrCodeUrl}" alt="QR Code">`;
+</script>
